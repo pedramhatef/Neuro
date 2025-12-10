@@ -94,3 +94,11 @@ export interface AIAnalysisResult {
   backtestResult?: BacktestResult;
   lastLiveUpdate?: number; // Timestamp of the last live backtest update
 }
+
+export interface AssetState {
+  signals: TradeSignal[];
+  cachedCandles: Candle[];
+  strategy: StrategyParams;
+  regime: MarketRegime;
+  aiAnalysis: AIAnalysisResult | null;
+}

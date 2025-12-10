@@ -1,4 +1,3 @@
-
 import { Candle, CryptoSymbol } from '../types';
 import { generateInitialHistory, generateNextCandle } from './marketSimulator';
 
@@ -75,11 +74,11 @@ export const fetchMarketData = async (symbol: CryptoSymbol, limit = 100): Promis
     return parsedData;
 
   } catch (error) {
-    console.warn("Failed to fetch real data. Switching to Simulation Mode.", error);
-    useSimulationFallback = true;
+    console.warn("Failed to fetch real data.", error);
     
-    // Recursive retry in simulation mode immediately
-    return fetchMarketData(symbol, limit);
+    // If real data fetch fails, do not automatically switch to simulation.
+    // Instead, return an empty array, letting the calling component handle the missing data.
+    return [];
   }
 };
 

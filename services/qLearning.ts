@@ -1,7 +1,6 @@
-
 import { StrategyParams, CryptoSymbol, MarketRegime, AIAnalysisResult } from '../types';
-
-const STORAGE_KEY = 'neurotrade_q_table_v2';
+import { db } from '../src/firebaseConfig';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface QTableEntry {
   params: StrategyParams;
@@ -10,34 +9,36 @@ interface QTableEntry {
   timestamp: number;
 }
 
-type QTable = Record<string, QTableEntry>;
-
 const getQKey = (symbol: CryptoSymbol, regime: MarketRegime) => `${symbol}_${regime}`;
 
-export const saveToQTable = (
-  symbol: CryptoSymbol, 
-  regime: MarketRegime, 
+export const saveToQTable = async (
+  symbol: CryptoSymbol,
+  regime: MarketRegime,
   params: StrategyParams,
   score: number,
   analysis: AIAnalysisResult
 ) => {
   try {
-    const currentTableStr = localStorage.getItem(STORAGE_KEY);
-    const currentTable: QTable = currentTableStr ? JSON.parse(currentTableStr) : {};
-    
     const key = getQKey(symbol, regime);
+    const docRef = doc(db, "qTable", key);
+    const docSnap = await getDoc(docRef);
     
+    let currentEntry: QTableEntry | null = null;
+    if (docSnap.exists()) {
+      currentEntry = docSnap.data() as QTableEntry;
+    }
+
     // Always update with the latest analysis for this regime if it's fresh
-    // Or if score is better. 
+    // Or if score is better.
     // We prioritize recency + performance.
-    if (!currentTable[key] || score >= currentTable[key].score || (Date.now() - currentTable[key].timestamp > 1000 * 60 * 60)) {
-      currentTable[key] = {
+    if (!currentEntry || score >= currentEntry.score || (Date.now() - currentEntry.timestamp > 1000 * 60 * 60)) {
+      const newEntry: QTableEntry = {
         params,
         analysis,
         score,
         timestamp: Date.now()
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(currentTable));
+      await setDoc(docRef, newEntry);
       // console.log(`[Q-Learning] Saved analysis for ${key}`);
     }
   } catch (e) {
@@ -45,16 +46,19 @@ export const saveToQTable = (
   }
 };
 
-export const getFromQTable = (symbol: CryptoSymbol, regime: MarketRegime): QTableEntry | null => {
+export const getFromQTable = async (symbol: CryptoSymbol, regime: MarketRegime): Promise<QTableEntry | null> => {
   try {
-    const currentTableStr = localStorage.getItem(STORAGE_KEY);
-    if (!currentTableStr) return null;
-    
-    const currentTable: QTable = JSON.parse(currentTableStr);
-    const entry = currentTable[getQKey(symbol, regime)];
-    
-    return entry || null;
+    const key = getQKey(symbol, regime);
+    const docRef = doc(db, "qTable", key);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data() as QTableEntry;
+    } else {
+      return null;
+    }
   } catch (e) {
+    console.error("Q-Learning Load Failed", e);
     return null;
   }
 };

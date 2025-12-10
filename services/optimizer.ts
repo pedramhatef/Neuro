@@ -3,8 +3,8 @@ import { StrategyParams, Candle, MarketRegime, BacktestResult } from '../types';
 import { runBacktest } from './backtesting';
 import { INITIAL_STRATEGY } from '../constants';
 
-const POPULATION_SIZE = 12;
-const GENERATIONS = 4;
+const POPULATION_SIZE = 20;
+const GENERATIONS = 10;
 
 // Helper to create random params within reasonable bounds
 const randomParams = (): StrategyParams => ({
@@ -27,28 +27,32 @@ const randomParams = (): StrategyParams => ({
 // The Mutation Logic
 const mutate = (params: StrategyParams): StrategyParams => {
   const p = { ...params };
-  if (Math.random() > 0.5) p.rsiPeriod = Math.max(2, p.rsiPeriod + (Math.random() > 0.5 ? 1 : -1));
-  if (Math.random() > 0.5) p.rsiOverbought = Math.min(99, Math.max(51, p.rsiOverbought + (Math.random() > 0.5 ? 2 : -2)));
-  
-  // Mutate adaptive thresholds
-  if (Math.random() > 0.5) p.rsiTrendBuyThreshold = Math.min(70, Math.max(30, p.rsiTrendBuyThreshold + (Math.random() > 0.5 ? 2 : -2)));
-  if (Math.random() > 0.5) p.rsiTrendSellThreshold = Math.min(70, Math.max(30, p.rsiTrendSellThreshold + (Math.random() > 0.5 ? 2 : -2)));
+  const mutationRate = 0.5; // 50% chance to mutate a given gene
 
-  if (Math.random() > 0.5) p.stopLoss = Math.max(0.005, p.stopLoss * (Math.random() > 0.5 ? 1.1 : 0.9));
+  if (Math.random() < mutationRate) p.rsiPeriod = Math.max(2, p.rsiPeriod + (Math.random() > 0.5 ? 1 : -1));
+  if (Math.random() < mutationRate) p.rsiOverbought = Math.min(99, Math.max(51, p.rsiOverbought + (Math.random() > 0.5 ? 2 : -2)));
+  if (Math.random() < mutationRate) p.rsiOversold = Math.min(p.rsiOverbought - 10, Math.max(1, p.rsiOversold + (Math.random() > 0.5 ? 2 : -2)));
+  
+  if (Math.random() < mutationRate) p.rsiTrendBuyThreshold = Math.min(70, Math.max(30, p.rsiTrendBuyThreshold + (Math.random() > 0.5 ? 2 : -2)));
+  if (Math.random() < mutationRate) p.rsiTrendSellThreshold = Math.min(70, Math.max(30, p.rsiTrendSellThreshold + (Math.random() > 0.5 ? 2 : -2)));
+
+  if (Math.random() < mutationRate) p.emaShort = Math.max(2, p.emaShort + (Math.random() > 0.5 ? 1 : -1));
+  if (Math.random() < mutationRate) p.emaLong = Math.max(p.emaShort + 5, p.emaLong + (Math.random() > 0.5 ? 2 : -2));
+  
+  if (Math.random() < mutationRate) p.stopLoss = Math.max(0.005, p.stopLoss * (Math.random() > 0.5 ? 1.1 : 0.9));
+  if (Math.random() < mutationRate) p.takeProfit = Math.max(p.stopLoss + 0.01, p.takeProfit * (Math.random() > 0.5 ? 1.1 : 0.9));
+
   return p;
 };
 
 // The Crossover Logic
 const crossover = (parent1: StrategyParams, parent2: StrategyParams): StrategyParams => {
-  return {
-    ...parent1,
-    rsiPeriod: Math.random() > 0.5 ? parent1.rsiPeriod : parent2.rsiPeriod,
-    emaShort: Math.random() > 0.5 ? parent1.emaShort : parent2.emaShort,
-    rsiTrendBuyThreshold: Math.random() > 0.5 ? parent1.rsiTrendBuyThreshold : parent2.rsiTrendBuyThreshold,
-    rsiTrendSellThreshold: Math.random() > 0.5 ? parent1.rsiTrendSellThreshold : parent2.rsiTrendSellThreshold,
-    stopLoss: Math.random() > 0.5 ? parent1.stopLoss : parent2.stopLoss,
-    takeProfit: Math.random() > 0.5 ? parent1.takeProfit : parent2.takeProfit,
-  };
+    const child: Partial<StrategyParams> = {};
+    const keys = Object.keys(parent1) as (keyof StrategyParams)[];
+    for (const key of keys) {
+        child[key] = Math.random() > 0.5 ? parent1[key] : parent2[key];
+    }
+    return child as StrategyParams;
 };
 
 // Fitness Function: Quality Score

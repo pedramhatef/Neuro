@@ -1,21 +1,12 @@
-import { CryptoSymbol, TradeSignal, StrategyParams, Candle, MarketRegime, AIAnalysisResult } from '../types';
+import { CryptoSymbol, TradeSignal, StrategyParams, Candle, MarketRegime, AIAnalysisResult, AssetState } from '../types';
 import { INITIAL_STRATEGY } from '../constants';
-
-const DB_PREFIX = 'neurotrade_db_v1_';
-
-interface AssetState {
-  signals: TradeSignal[];
-  lastPrice: number;
-  cachedCandles: Candle[];
-  strategy: StrategyParams;
-  regime: MarketRegime;
-  aiAnalysis?: AIAnalysisResult | null;
-}
+import { db } from '../src/firebaseConfig';
+import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
 // --- Core Persistence Logic ---
 
-export const saveAssetState = (
-  symbol: CryptoSymbol, 
+export const saveAssetState = async (
+  symbol: CryptoSymbol,
   data: {
     signals: TradeSignal[];
     candles: Candle[];
@@ -25,47 +16,48 @@ export const saveAssetState = (
   }
 ) => {
   try {
-    // Store up to 300 candles to ensure we have enough history for 
-    // indicators (EMA200) and backtesting immediately upon reload.
-    const candlesToStore = data.candles.slice(-300); 
-    
+    const candlesToStore = data.candles.slice(-300);
+
     const state: AssetState = {
-      signals: data.signals,
-      lastPrice: data.candles[data.candles.length - 1]?.close || 0,
+      signals: data.signals || [], // Ensure signals is always an array
       cachedCandles: candlesToStore,
       strategy: data.strategy,
       regime: data.regime,
-      aiAnalysis: data.aiAnalysis
+      aiAnalysis: data.aiAnalysis || null // Ensure aiAnalysis is null if undefined
     };
 
-    localStorage.setItem(`${DB_PREFIX}${symbol}`, JSON.stringify(state));
+    await setDoc(doc(db, "assetStates", symbol), state);
   } catch (e) {
-    console.error("Database Save Failed (Quota Exceeded?)", e);
+    console.error("Firestore Save Failed", e);
   }
 };
 
-export const loadAssetState = (symbol: CryptoSymbol): AssetState | null => {
+export const loadAssetState = async (symbol: CryptoSymbol): Promise<AssetState | null> => {
   try {
-    const data = localStorage.getItem(`${DB_PREFIX}${symbol}`);
-    if (!data) return null;
-    return JSON.parse(data);
+    const docRef = doc(db, "assetStates", symbol);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data() as AssetState;
+    } else {
+      return null;
+    }
   } catch (e) {
-    console.error("Database Load Failed", e);
+    console.error("Firestore Load Failed", e);
     return null;
   }
 };
 
-export const clearDatabase = () => {
-  Object.keys(localStorage).forEach(key => {
-    if (key.startsWith(DB_PREFIX)) {
-      localStorage.removeItem(key);
-    }
-  });
-  window.location.reload();
+export const clearAssetState = async (symbol: CryptoSymbol) => {
+  try {
+    await deleteDoc(doc(db, "assetStates", symbol));
+  } catch (e) {
+    console.error("Firestore Delete Failed", e);
+  }
 };
 
 // --- Helper to get initial strategy if DB is empty ---
-export const getStrategyFor = (symbol: CryptoSymbol): StrategyParams => {
-  const state = loadAssetState(symbol);
+export const getStrategyFor = async (symbol: CryptoSymbol): Promise<StrategyParams> => {
+  const state = await loadAssetState(symbol);
   return state?.strategy || INITIAL_STRATEGY;
 };
