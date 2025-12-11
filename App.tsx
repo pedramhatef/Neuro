@@ -23,6 +23,17 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 
 import { TrendingUp, BarChart2, DollarSign, Activity } from 'lucide-react';
 
+const getPriceDecimals = (symbol: CryptoSymbol) => {
+    switch (symbol) {
+        case CryptoSymbol.DOGE:
+        case CryptoSymbol.XRP:
+        case CryptoSymbol.ADA:
+            return 4;
+        default:
+            return 2;
+    }
+};
+
 const App: React.FC = () => {
   // --- State ---
   const [selectedSymbol, setSelectedSymbol] = useState<CryptoSymbol>(CryptoSymbol.BTC);
@@ -359,6 +370,7 @@ const App: React.FC = () => {
   // --- Render ---
   const lastPrice = data.length > 0 ? data[data.length - 1].close : 0;
   const prevPrice = data.length > 1 ? data[data.length - 2].close : 0;
+  const priceDecimals = getPriceDecimals(selectedSymbol);
 
   if (!isAuth) {
     return (
@@ -378,7 +390,7 @@ const App: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
             <div className="lg:col-span-2 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatsCard title="Current Price" value={`$${lastPrice.toFixed(4)}`} icon={DollarSign} subValue={`${lastPrice - prevPrice >= 0 ? '+' : ''}${(lastPrice - prevPrice).toFixed(4)}`} trend={lastPrice - prevPrice >= 0 ? 'up' : 'down'} />
+                <StatsCard title="Current Price" value={`$${lastPrice.toFixed(priceDecimals)}`} icon={DollarSign} subValue={`${lastPrice - prevPrice >= 0 ? '+' : ''}${(lastPrice - prevPrice).toFixed(priceDecimals)}`} trend={lastPrice - prevPrice >= 0 ? 'up' : 'down'} />
                 <StatsCard title="Market Regime" value={currentRegime.replace('_', ' ')} icon={Activity} color="text-purple-400" />
                 <StatsCard title="Active Strategy" value={`RSI ${currentStrategy.rsiPeriod} / EMA ${currentStrategy.emaLong}`} icon={TrendingUp} />
                 <StatsCard title="24h Volume" value={`${(data.reduce((acc, c) => acc + c.volume, 0) / 1000).toFixed(1)}k`} icon={BarChart2} color="text-emerald-400" />
@@ -390,7 +402,7 @@ const App: React.FC = () => {
                      <span className="ml-3 text-zinc-400">Syncing Market Data...</span>
                    </div>
                  ) : (
-                   <PriceChart data={data} signals={signals} color={SUPPORTED_ASSETS.find(a => a.symbol === selectedSymbol)?.color || '#6366f1'} />
+                   <PriceChart symbol={selectedSymbol} data={data} signals={signals} color={SUPPORTED_ASSETS.find(a => a.symbol === selectedSymbol)?.color || '#6366f1'} />
                  )}
               </div>
             </div>

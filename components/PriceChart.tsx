@@ -1,17 +1,30 @@
 
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from 'recharts';
-import { Candle, SignalType, TradeSignal } from '../types';
+import { Candle, CryptoSymbol, SignalType, TradeSignal } from '../types';
 
 interface PriceChartProps {
   data: Candle[];
   signals: TradeSignal[];
   color: string;
+  symbol: CryptoSymbol;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const getPriceDecimals = (symbol: CryptoSymbol) => {
+    switch (symbol) {
+        case CryptoSymbol.DOGE:
+        case CryptoSymbol.XRP:
+        case CryptoSymbol.ADA:
+            return 4;
+        default:
+            return 2;
+    }
+};
+
+const CustomTooltip = ({ active, payload, label, symbol }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
+    const priceDecimals = getPriceDecimals(symbol);
     return (
       <div className="rounded-lg border border-zinc-800 bg-zinc-950/95 p-3 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-zinc-950/80">
         <div className="mb-1 flex items-center gap-2">
@@ -21,7 +34,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <div className="space-y-1">
            <div className="flex items-center justify-between gap-4">
              <span className="text-xs text-zinc-500">Price</span>
-             <span className="font-mono text-sm font-bold text-zinc-100">${data.close.toFixed(2)}</span>
+             <span className="font-mono text-sm font-bold text-zinc-100">${data.close.toFixed(priceDecimals)}</span>
            </div>
            <div className="flex items-center justify-between gap-4">
              <span className="text-xs text-zinc-500">Volume</span>
@@ -30,11 +43,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
            <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-zinc-800 pt-2">
              <div className="flex justify-between gap-2">
                <span className="text-[10px] text-zinc-600">H</span>
-               <span className="font-mono text-[10px] text-emerald-400/80">${data.high.toFixed(2)}</span>
+               <span className="font-mono text-[10px] text-emerald-400/80">${data.high.toFixed(priceDecimals)}</span>
              </div>
              <div className="flex justify-between gap-2">
                <span className="text-[10px] text-zinc-600">L</span>
-               <span className="font-mono text-[10px] text-rose-400/80">${data.low.toFixed(2)}</span>
+               <span className="font-mono text-[10px] text-rose-400/80">${data.low.toFixed(priceDecimals)}</span>
              </div>
            </div>
         </div>
@@ -44,8 +57,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export const PriceChart: React.FC<PriceChartProps> = ({ data, signals, color }) => {
+export const PriceChart: React.FC<PriceChartProps> = ({ data, signals, color, symbol }) => {
   const visibleSignals = signals.filter(s => s.timestamp >= data[0].time);
+  const priceDecimals = getPriceDecimals(symbol);
 
   return (
     <div className="relative h-[500px] w-full rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 shadow-sm backdrop-blur-sm">
@@ -81,13 +95,13 @@ export const PriceChart: React.FC<PriceChartProps> = ({ data, signals, color }) 
             orientation="right"
             stroke="#52525b"
             tick={{ fontSize: 11, fill: '#71717a' }}
-            tickFormatter={(val) => val.toFixed(2)}
+            tickFormatter={(val) => val.toFixed(priceDecimals)}
             axisLine={false}
             tickLine={false}
             dx={5}
             width={60}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#52525b', strokeDasharray: '3 3' }} />
+          <Tooltip content={<CustomTooltip symbol={symbol} />} cursor={{ stroke: '#52525b', strokeDasharray: '3 3' }} />
           <Area 
             type="monotone" 
             dataKey="close" 
