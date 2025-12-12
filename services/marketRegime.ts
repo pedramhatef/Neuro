@@ -21,8 +21,9 @@ export const detectMarketRegime = (candles: Candle[]): { regime: MarketRegime; r
   const low = Math.min(...recentCandles.map(c => c.low));
   const percentRange = (high - low) / low;
 
-  // Adjusted threshold: >1.5% move in 15 mins is volatile enough for crypto day trading
-  if (percentRange > 0.015) { 
+  // Increased threshold to 2.5% to reduce false VOLATILE classifications
+  // Prevents whipsaws from normal market fluctuations in choppy conditions
+  if (percentRange > 0.025) { 
     return { regime: MarketRegime.VOLATILE, reason: `High Volatility detected (${(percentRange*100).toFixed(1)}% range)` };
   }
 

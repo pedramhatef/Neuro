@@ -170,10 +170,12 @@ export const generateSignal = (
   // 1. Calculate Key Indicators
   const rsiArr = calculateRSI(closes, params.rsiPeriod);
   const rsi = rsiArr[rsiArr.length - 1];
-  const prevRsi = rsiArr[rsiArr.length - 2]; 
+  const prevRsi = rsiArr[rsiArr.length - 2];
+  const twoBarAgoRsi = rsiArr.length > 2 ? rsiArr[rsiArr.length - 3] : prevRsi;
   
   const emaShortArr = calculateEMA(closes, params.emaShort);
   const emaShort = emaShortArr[emaShortArr.length - 1];
+  const prevEmaShort = emaShortArr.length > 1 ? emaShortArr[emaShortArr.length - 2] : emaShort;
   
   const emaLongArr = calculateEMA(closes, params.emaLong);
   const emaLong = emaLongArr[emaLongArr.length - 1];

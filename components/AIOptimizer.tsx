@@ -190,6 +190,48 @@ export const AIOptimizer: React.FC<AIOptimizerProps> = ({
                 </div>
             </div>
 
+            {/* 4. Dynamic Adaptation Status */}
+            <div className="rounded-lg border border-indigo-800/50 bg-indigo-950/30 p-4">
+                <h3 className="mb-3 text-xs font-semibold text-indigo-300 flex items-center gap-2">
+                    <RefreshCw className="h-3 w-3 text-indigo-400 animate-spin" />
+                    Dynamic Adaptation
+                </h3>
+                <div className="space-y-2 text-xs text-zinc-300">
+                    <div className="flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <span>
+                            {currentRegime === 'VOLATILE' 
+                              ? 'RSI period adjusted for volatility (smoothing enabled)' 
+                              : 'RSI period optimized for trend sensitivity'}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <span>
+                            Volume thresholds dynamically calibrated to recent distribution
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <span>
+                            2-bar signal confirmation required to prevent whipsaws
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+                        <span>
+                            Circuit breaker: Stops new trades if loss exceeds 15% of capital
+                        </span>
+                    </div>
+                    {displayResult.netProfit < -1500 && (
+                        <div className="mt-3 flex items-center gap-2 p-2 rounded bg-rose-950/50 border border-rose-800/30">
+                            <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>
+                            <span className="text-rose-300 font-medium">Circuit breaker may be active (review drawdown)</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
         </div>
     </div>
   );

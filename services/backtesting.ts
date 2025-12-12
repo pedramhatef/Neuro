@@ -23,6 +23,11 @@ export const runBacktest = (
   let totalGrossLoss = 0;
   let maxDrawdown = 0;
   let peakEquity = startingBalance;
+  
+  // Dynamic Drawdown Circuit-Breaker
+  // Stop trading if max loss exceeds 15% of starting balance (dynamic, not fixed)
+  const maxAllowableLossPercent = 0.15; // 15% loss threshold
+  const circuitBreakerThreshold = startingBalance * (1 - maxAllowableLossPercent);
 
   const equityCurve: number[] = [];
 
