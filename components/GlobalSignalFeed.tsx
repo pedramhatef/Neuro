@@ -1,8 +1,10 @@
+
 import React from 'react';
-import { TradeSignal, SignalType } from '../types';
+import { TradeSignal, SignalType, CryptoSymbol } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { SUPPORTED_ASSETS } from '../constants';
+import { getPriceDecimals } from '../utils/utils';
 
 interface GlobalSignalFeedProps {
   signals: TradeSignal[];
@@ -46,6 +48,7 @@ export const GlobalSignalFeed: React.FC<GlobalSignalFeedProps> = ({ signals }) =
           {signals.length > 0 ? (
             signals.map((signal) => {
               if (!signal) return null; // Add this check
+              const priceDecimals = getPriceDecimals(signal.symbol as CryptoSymbol);
               return (
                 <motion.div
                   key={signal.id}
@@ -59,7 +62,7 @@ export const GlobalSignalFeed: React.FC<GlobalSignalFeedProps> = ({ signals }) =
                   <div className="flex-1">
                     <div className="font-bold flex justify-between">
                       <span>{getAssetName(signal.symbol)}: {signal.type}</span>
-                      <span>${signal.price.toFixed(2)}</span>
+                      <span>${signal.price.toFixed(priceDecimals)}</span>
                     </div>
                     <div className="text-xs text-zinc-400 mt-1">
                       {new Date(signal.timestamp).toLocaleTimeString()} - {signal.reason}

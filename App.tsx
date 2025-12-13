@@ -89,7 +89,6 @@ const App: React.FC = () => {
       const allSignals: TradeSignal[] = [];
       querySnapshot.forEach((doc) => {
         const docSignals = doc.data().signals as TradeSignal[] || [];
-        console.log(`Signals for ${doc.id}:`, docSignals);
         allSignals.push(...docSignals);
       });
       // Sort by most recent and take top 15

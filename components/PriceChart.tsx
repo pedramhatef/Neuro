@@ -2,6 +2,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from 'recharts';
 import { Candle, CryptoSymbol, SignalType, TradeSignal } from '../types';
+import { getPriceDecimals } from '../utils/utils';
 
 interface PriceChartProps {
   data: Candle[];
@@ -9,17 +10,6 @@ interface PriceChartProps {
   color: string;
   symbol: CryptoSymbol;
 }
-
-const getPriceDecimals = (symbol: CryptoSymbol) => {
-    switch (symbol) {
-        case CryptoSymbol.DOGE:
-        case CryptoSymbol.XRP:
-        case CryptoSymbol.ADA:
-            return 4;
-        default:
-            return 2;
-    }
-};
 
 const CustomTooltip = ({ active, payload, label, symbol }: any) => {
   if (active && payload && payload.length) {
