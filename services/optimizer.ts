@@ -25,9 +25,13 @@ const randomParams = (): StrategyParams => ({
 });
 
 // The Mutation Logic
-const mutate = (params: StrategyParams): StrategyParams => {
+export const mutate = (params: StrategyParams, generation: number): StrategyParams => {
   const p = { ...params };
-  const mutationRate = 0.5; // 50% chance to mutate a given gene
+  // Linearly decay mutation rate from 0.5 to 0.1 over the generations
+  const highRate = 0.5;
+  const lowRate = 0.1;
+  const mutationRate = highRate - (highRate - lowRate) * (generation / GENERATIONS);
+
 
   if (Math.random() < mutationRate) p.rsiPeriod = Math.max(2, p.rsiPeriod + (Math.random() > 0.5 ? 1 : -1));
   if (Math.random() < mutationRate) p.rsiOverbought = Math.min(99, Math.max(51, p.rsiOverbought + (Math.random() > 0.5 ? 2 : -2)));
@@ -112,7 +116,7 @@ export const runGeneticOptimization = async (
       const p1 = survivors[Math.floor(Math.random() * survivors.length)];
       const p2 = survivors[Math.floor(Math.random() * survivors.length)];
       let child = crossover(p1, p2);
-      if (Math.random() > 0.2) child = mutate(child); 
+      if (Math.random() > 0.2) child = mutate(child, gen); 
       nextGen.push(child);
     }
     
