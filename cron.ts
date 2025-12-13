@@ -12,6 +12,7 @@ import { analyzeMarketWithGemini } from './services/geminiService';
 import { saveAssetState, loadAssetState } from './services/persistence';
 import { runBacktest } from './services/backtesting';
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const runCronJob = async () => {
     console.log('Starting cron job...');
@@ -73,4 +74,12 @@ const runCronJob = async () => {
     console.log('Cron job finished.');
 };
 
-runCronJob();
+const main = async () => {
+    while (true) {
+        await runCronJob();
+        console.log('Waiting for 5 seconds before the next run...');
+        await delay(5000);
+    }
+};
+
+main();

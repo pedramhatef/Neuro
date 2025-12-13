@@ -1,6 +1,39 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { Candle, StrategyParams, CryptoSymbol, AIAnalysisResult, MarketRegime } from '../types';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// --- File-based Rate Limiter for Server Environment ---
+const RATE_LIMIT_STATE_FILE = path.resolve('.ratelimit_state.json');
+
+interface RateLimitState {
+  lastCallTime?: number;
+  cooldownUntil?: number;
+}
+
+const readRateLimitState = (): RateLimitState => {
+  try {
+    if (fs.existsSync(RATE_LIMIT_STATE_FILE)) {
+      const data = fs.readFileSync(RATE_LIMIT_STATE_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.warn("Could not read rate limit state, starting fresh.", error);
+  }
+  return {};
+};
+
+const writeRateLimitState = (newState: Partial<RateLimitState>) => {
+  try {
+    const currentState = readRateLimitState();
+    const updatedState = { ...currentState, ...newState };
+    fs.writeFileSync(RATE_LIMIT_STATE_FILE, JSON.stringify(updatedState));
+  } catch (error) {
+    console.error("Error writing rate limit state:", error);
+  }
+};
+
 
 // --- Smart Mock Generator (Fallback when API Quota is hit) ---
 const getMockAnalysis = (symbol: CryptoSymbol, currentParams: StrategyParams): AIAnalysisResult => {
@@ -46,9 +79,6 @@ const getMockAnalysis = (symbol: CryptoSymbol, currentParams: StrategyParams): A
   };
 };
 
-// --- Persistent Rate Limiter Keys ---
-const LAST_CALL_KEY = 'neuro_last_gemini_call';
-const COOLDOWN_KEY = 'neuro_gemini_cooldown';
 const MIN_CALL_INTERVAL_MS = 30000; 
 
 export const analyzeMarketWithGemini = async (
@@ -58,23 +88,24 @@ export const analyzeMarketWithGemini = async (
 ): Promise<AIAnalysisResult> => {
   
   const apiKey = process.env.API_KEY;
-  
-  const cooldownUntil = parseInt(localStorage.getItem(COOLDOWN_KEY) || '0');
+  const { cooldownUntil = 0, lastCallTime = 0 } = readRateLimitState();
+
   if (Date.now() < cooldownUntil) {
+    console.warn(`Gemini API is on cooldown. Using mock data until ${new Date(cooldownUntil).toLocaleTimeString()}`);
     return new Promise(resolve => setTimeout(() => resolve(getMockAnalysis(symbol, currentParams)), 500));
   }
 
-  const lastCallTime = parseInt(localStorage.getItem(LAST_CALL_KEY) || '0');
   if (Date.now() - lastCallTime < MIN_CALL_INTERVAL_MS) {
     return new Promise(resolve => setTimeout(() => resolve(getMockAnalysis(symbol, currentParams)), 500));
   }
 
   if (!apiKey) {
+    console.warn("API_KEY environment variable not set. Using mock data.");
     return new Promise(resolve => setTimeout(() => resolve(getMockAnalysis(symbol, currentParams)), 800));
   }
 
   try {
-    localStorage.setItem(LAST_CALL_KEY, Date.now().toString());
+    writeRateLimitState({ lastCallTime: Date.now() });
 
     const ai = new GoogleGenAI({ apiKey });
 
@@ -143,8 +174,11 @@ export const analyzeMarketWithGemini = async (
 
   } catch (error: any) {
     const errorMsg = error?.message || JSON.stringify(error);
+    console.error("Error calling Gemini API:", errorMsg);
     if (errorMsg.includes('429') || errorMsg.includes('quota') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
-        localStorage.setItem(COOLDOWN_KEY, (Date.now() + 5 * 60 * 1000).toString());
+        const newCooldown = Date.now() + 5 * 60 * 1000;
+        console.warn(`Gemini API quota exceeded. Setting cooldown until ${new Date(newCooldown).toLocaleTimeString()}`);
+        writeRateLimitState({ cooldownUntil: newCooldown });
     }
     return getMockAnalysis(symbol, currentParams);
   }
