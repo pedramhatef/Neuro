@@ -25,5 +25,11 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "cron.ts",
+    "dist_server",
+    "tsconfig.server.json",
+    ".ratelimit_state.json"
+  ]
 }
