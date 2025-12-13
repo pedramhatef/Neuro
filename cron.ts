@@ -40,7 +40,7 @@ const runCronJob = async () => {
             const latestCandle = mergedCandles[mergedCandles.length - 1];
 
             if (signalResult.type !== SignalType.HOLD) {
-                const newSignal: TradeSignal = { id: crypto.randomUUID(), type: signalResult.type, price: latestCandle.close, timestamp: latestCandle.time, reason: signalResult.reason, symbol: asset.symbol, regimeAtCreation: regimeInfo.regime };
+                const newSignal: TradeSignal = { id: `${Date.now()}-${Math.random()}`, type: signalResult.type, price: latestCandle.close, timestamp: latestCandle.time, reason: signalResult.reason, symbol: asset.symbol, regimeAtCreation: regimeInfo.regime };
                 signals = [...signals, newSignal];
             }
 

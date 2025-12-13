@@ -14,6 +14,7 @@
     "firebase": "^12.6.0",
     "framer-motion": "^12.23.25",
     "lucide-react": "^0.554.0",
+    "pm2": "^6.0.14",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "recharts": "^3.4.1"
