@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "noEmit": false,
+    "outDir": "dist_server"
+  },
+  "include": ["cron.ts", "services/**/*.ts", "types.ts", "constants.ts", "src/firebaseConfig.ts"]
+}
