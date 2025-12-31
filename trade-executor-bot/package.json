@@ -1,0 +1,25 @@
+{
+  "name": "trade-executor-bot",
+  "version": "1.0.0",
+  "description": "A bot to execute trades on dYdX based on Firestore signals.",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "monitor": "ts-node src/monitor.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@dydxprotocol/v4-client-js": "^1.0.0-beta.2",
+    "firebase-admin": "^11.11.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.5",
+    "ts-node": "^10.9.2"
+  }
+}
